@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Order, OrderStatus } from '@/types/database';
 import { formatPrice, formatDate, getStatusLabel } from '@/lib/utils';
-import { generateAdminCustomerWhatsAppUrl } from '@/lib/whatsapp';
+import { generateAdminCustomerWhatsAppUrl, defaultStatusMessages, getWhatsAppStatusTemplate } from '@/lib/whatsapp';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -70,8 +70,18 @@ export default function OrderDetailClient({ initialOrder }: OrderDetailClientPro
     }
   };
 
+  const [customerMessage, setCustomerMessage] = useState<string>(
+    defaultStatusMessages[initialOrder.status] || ''
+  );
+
+  // When status changes in dropdown, auto-suggest the matching message
+  const handleStatusChange = (newStatus: OrderStatus) => {
+    setStatus(newStatus);
+    setCustomerMessage(defaultStatusMessages[newStatus] || '');
+  };
+
   // Update Status & Notes
-  const handleUpdateOrder = async () => {
+  const handleUpdateOrder = async (openWhatsAppImmediately = false) => {
     setIsUpdating(true);
     try {
       const { error } = await supabase
@@ -91,7 +101,18 @@ export default function OrderDetailClient({ initialOrder }: OrderDetailClientPro
         admin_notes: adminNotes.trim() || null,
       }));
 
-      toast.success('تم تحديث حالة وملاحظات الطلب بنجاح');
+      toast.success('تم تحديث حالة الطلب لحظياً بنجاح! ✨');
+
+      if (openWhatsAppImmediately) {
+        const url = generateAdminCustomerWhatsAppUrl(
+          order.customer_phone,
+          order.customer_name,
+          order.order_number,
+          status,
+          getWhatsAppStatusTemplate(order.customer_name, order.order_number, status, customerMessage)
+        );
+        window.open(url, '_blank');
+      }
     } catch (err: any) {
       toast.error(err.message || 'فشل تحديث الطلب');
     } finally {
@@ -104,7 +125,8 @@ export default function OrderDetailClient({ initialOrder }: OrderDetailClientPro
     order.customer_phone,
     order.customer_name,
     order.order_number,
-    status
+    status,
+    getWhatsAppStatusTemplate(order.customer_name, order.order_number, status, customerMessage)
   );
 
   return (
@@ -282,8 +304,8 @@ export default function OrderDetailClient({ initialOrder }: OrderDetailClientPro
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as OrderStatus)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-stone-900 bg-stone-50/50"
+                onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-stone-900 bg-stone-50/50"
               >
                 <option value="pending">معلق (بانتظار العربون)</option>
                 <option value="confirmed">مؤكد (تم استلام العربون)</option>
@@ -294,28 +316,59 @@ export default function OrderDetailClient({ initialOrder }: OrderDetailClientPro
               </select>
             </div>
 
+            {/* Customer Facing WhatsApp Message */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-emerald-900">
+                  نص الرسالة المرسلة للعميل (واتساب):
+                </label>
+                <span className="text-[10px] text-emerald-700 font-semibold">تتحدث تلقائياً مع الحالة</span>
+              </div>
+              <textarea
+                value={customerMessage}
+                onChange={(e) => setCustomerMessage(e.target.value)}
+                rows={3}
+                placeholder="اكتب هنا الرسالة التي ستصل للعميل مع رابط الطلب..."
+                className="w-full px-3 py-2 rounded-xl border border-emerald-200 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-700 bg-white"
+              />
+            </div>
+
+            {/* Internal Admin Notes */}
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-2">
-                ملاحظات الإدارة الداخلية (لا تظهر للعميل):
+              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+                ملاحظات الإدارة الداخلية (نحتفظ بها ولا تظهر للعميل):
               </label>
               <textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="مثال: تم التأكد من تحويل فودافون كاش بتاريخ 8-9..."
                 className="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs focus:outline-none focus:ring-2 focus:ring-stone-900 bg-stone-50/50"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={handleUpdateOrder}
-              disabled={isUpdating}
-              className="w-full py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-sand-50 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-            >
-              <Save className="w-3.5 h-3.5 text-brass-400" />
-              <span>{isUpdating ? 'جاري الحفظ...' : 'حفظ التغييرات'}</span>
-            </button>
+            {/* Action Buttons: Save & Save + Send */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleUpdateOrder(true)}
+                disabled={isUpdating}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>حفظ وتحديث الحالة وإرسال واتساب للعميل</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleUpdateOrder(false)}
+                disabled={isUpdating}
+                className="w-full py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 text-sand-50 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5 text-brass-400" />
+                <span>{isUpdating ? 'جاري الحفظ...' : 'حفظ التحديث في النظام فقط'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Payment receipt quick thumbnail */}
