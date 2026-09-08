@@ -18,6 +18,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'react-hot-toast';
 import { RealtimeOrderNotification } from './RealtimeNotification';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function AdminLayout({
   children,
@@ -49,7 +50,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen flex bg-stone-100/70">
+    <div className="min-h-screen flex bg-stone-100/70 dark:bg-stone-950 transition-colors">
       
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-stone-900 text-stone-300 border-l border-stone-800 p-5 shrink-0 select-none">
@@ -167,13 +168,16 @@ export default function AdminLayout({
         )}
 
         {/* Top bar with Realtime Status & Quick Actions */}
-        <header className="bg-white/80 backdrop-blur border-b border-stone-200/80 px-6 py-3.5 hidden md:flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-2 text-xs text-stone-500">
+        <header className="bg-white/80 dark:bg-stone-900/80 backdrop-blur border-b border-stone-200/80 dark:border-stone-800 px-6 py-3.5 hidden md:flex items-center justify-between sticky top-0 z-20 transition-colors">
+          <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
             <span>مرحباً بك في إدارة</span>
-            <span className="font-bold text-stone-900">Gogo Concrete</span>
+            <span className="font-bold text-stone-900 dark:text-white">Gogo Concrete</span>
           </div>
 
-          <RealtimeOrderNotification />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <RealtimeOrderNotification />
+          </div>
         </header>
 
         {/* Page Content */}

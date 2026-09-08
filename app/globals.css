@@ -7,9 +7,15 @@
   --foreground: #1D1C19;
 }
 
+.dark {
+  --background: #141311;
+  --foreground: #F9F9F8;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  font-family: var(--font-cairo), 'Cairo', system-ui, -apple-system, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-tap-highlight-color: transparent;
 }
@@ -24,11 +30,23 @@ body {
   background: #F2F2F0;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #1D1C19;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #D1CFCA;
   border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #3E3C38;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #A8A59E;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #5E5C56;
 }

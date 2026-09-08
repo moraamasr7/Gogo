@@ -64,10 +64,10 @@ export default async function AdminDashboardPage() {
       {/* Top Welcome & Summary Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white tracking-tight">
             لوحة قيادة المتجر
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
+          <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
             نظرة شاملة على الإيرادات ومراحل تنفيذ طلبات الكونكريت
           </p>
         </div>
@@ -75,10 +75,10 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/orders"
-            className="px-4 py-2.5 rounded-xl bg-stone-900 text-sand-50 hover:bg-stone-800 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-xl bg-stone-900 dark:bg-brass-500 text-sand-50 dark:text-stone-950 hover:bg-stone-800 dark:hover:bg-brass-400 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
           >
             <span>عرض كل الطلبات</span>
-            <ArrowLeft className="w-3.5 h-3.5 text-brass-400" />
+            <ArrowLeft className="w-3.5 h-3.5 text-brass-400 dark:text-stone-950" />
           </Link>
         </div>
       </div>
@@ -86,43 +86,43 @@ export default async function AdminDashboardPage() {
       {/* Financial KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         
-        <div className="p-6 rounded-3xl bg-white border border-stone-200/90 shadow-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-stone-500">إجمالي المبيعات المؤكدة</span>
-            <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center text-stone-700">
+            <span className="text-xs font-bold text-stone-500 dark:text-stone-400">إجمالي المبيعات المؤكدة</span>
+            <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-700 dark:text-stone-300">
               <Coins className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-black font-mono text-stone-950">
+          <p className="text-2xl sm:text-3xl font-black font-mono text-stone-950 dark:text-white">
             {formatPrice(totalSales)}
           </p>
-          <span className="text-[11px] text-stone-400 mt-1 block">من كافة الطلبات النشطة</span>
+          <span className="text-[11px] text-stone-400 dark:text-stone-500 mt-1 block">من كافة الطلبات النشطة</span>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-stone-200/90 shadow-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-emerald-700">العربون المحصل مقدماً</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">العربون المحصل مقدماً</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-black font-mono text-emerald-800">
+          <p className="text-2xl sm:text-3xl font-black font-mono text-emerald-800 dark:text-emerald-400">
             {formatPrice(collectedDeposits)}
           </p>
-          <span className="text-[11px] text-stone-400 mt-1 block">محولة عبر فودافون كاش / إنستاباي</span>
+          <span className="text-[11px] text-stone-400 dark:text-stone-500 mt-1 block">محولة عبر فودافون كاش / إنستاباي</span>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-stone-200/90 shadow-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-amber-700">المتبقي للتحصيل عند التسليم</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">المتبقي للتحصيل عند التسليم</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-black font-mono text-amber-900">
+          <p className="text-2xl sm:text-3xl font-black font-mono text-amber-900 dark:text-amber-300">
             {formatPrice(outstandingBalance)}
           </p>
-          <span className="text-[11px] text-stone-400 mt-1 block">يُحصل بواسطة مندوب الشحن</span>
+          <span className="text-[11px] text-stone-400 dark:text-stone-500 mt-1 block">يُحصل بواسطة مندوب الشحن</span>
         </div>
 
       </div>
