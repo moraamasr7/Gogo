@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { SettingItem } from '@/types/database';
 import { createClient } from '@/lib/supabase/client';
-import { Save, Shield, Smartphone, Coins, Hammer, HelpCircle } from 'lucide-react';
+import { Save, Shield, Smartphone, Coins, Hammer, HelpCircle, ImageIcon, Upload, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface SettingsClientProps {
@@ -31,7 +32,54 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
   );
   const [maintenanceMode, setMaintenanceMode] = useState(initialMap['maintenance_mode'] === 'true');
 
+  const [headerLogoUrl, setHeaderLogoUrl] = useState(initialMap['header_logo_url'] || '');
+  const [heroBannerUrl, setHeroBannerUrl] = useState(initialMap['hero_banner_url'] || '');
+
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+
+  const handleFileUpload = async (file: File, type: 'logo' | 'banner') => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('صيغة الصورة يجب أن تكون JPG أو PNG أو WEBP');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب ألا يتجاوز 5 ميجابايت');
+      return;
+    }
+
+    if (type === 'logo') setIsUploadingLogo(true);
+    else setIsUploadingBanner(true);
+
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+      const path = `branding/${type}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(path, file);
+
+      if (error) throw error;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(data.path);
+
+      if (type === 'logo') {
+        setHeaderLogoUrl(publicUrlData.publicUrl);
+      } else {
+        setHeroBannerUrl(publicUrlData.publicUrl);
+      }
+      toast.success(type === 'logo' ? 'تم رفع لوجو الهيدر بنجاح! ✨' : 'تم رفع بانر المتجر بنجاح! ✨');
+    } catch (err: any) {
+      toast.error(err.message || 'فشل رفع الصورة');
+    } finally {
+      if (type === 'logo') setIsUploadingLogo(false);
+      else setIsUploadingBanner(false);
+    }
+  };
 
   const handleSaveAll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,14 +95,18 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
       { key: 'payment_instructions', value: paymentInstructions.trim() },
       { key: 'shipping_instructions', value: shippingInstructions.trim() },
       { key: 'maintenance_mode', value: maintenanceMode ? 'true' : 'false' },
+      { key: 'header_logo_url', value: headerLogoUrl.trim() },
+      { key: 'hero_banner_url', value: heroBannerUrl.trim() },
     ];
 
     try {
       for (const item of updates) {
         const { error } = await supabase
           .from('settings')
-          .update({ value: item.value, updated_at: new Date().toISOString() })
-          .eq('key', item.key);
+          .upsert(
+            { key: item.key, value: item.value, is_public: true, updated_at: new Date().toISOString() },
+            { onConflict: 'key' }
+          );
 
         if (error) throw error;
       }
@@ -181,6 +233,141 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
               onChange={(e) => setShippingInstructions(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs focus:ring-2 focus:ring-stone-900 bg-stone-50/50"
             />
+          </div>
+        </div>
+
+        {/* Branding Images Box (Header Logo & Hero Banner) */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-white border border-stone-200 shadow-sm space-y-6">
+          <div className="flex items-center gap-2 pb-3 border-b border-stone-100">
+            <ImageIcon className="w-5 h-5 text-brass-500" />
+            <div>
+              <h2 className="text-sm font-bold text-stone-900">صور الهوية والبانرات (Header & Hero)</h2>
+              <p className="text-[11px] text-stone-400">يمكنك تغيير وتحديث الشعار والبانر الرئيسي أسبوعياً أو عند إطلاق تشكيلات ومواسم جديدة</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 1. Header Logo */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-stone-800">
+                  لوجو وشعار الهيدر (Header Logo)
+                </label>
+                {headerLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setHeaderLogoUrl('')}
+                    className="text-[11px] text-rose-600 hover:text-rose-700 flex items-center gap-1 font-semibold"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>إزالة الشعار</span>
+                  </button>
+                )}
+              </div>
+
+              {headerLogoUrl ? (
+                <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-stone-300 bg-white shadow-xs mx-auto my-2">
+                  <Image
+                    src={headerLogoUrl}
+                    alt="Header Logo Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-stone-300 bg-white/60 flex flex-col items-center justify-center text-stone-400 mx-auto my-2">
+                  <span className="text-lg font-black text-brass-500">G</span>
+                  <span className="text-[9px]">افتراضي (SVG)</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <label className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-stone-200 hover:border-stone-400 text-xs font-bold text-stone-800 transition-colors shadow-xs">
+                  <Upload className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{isUploadingLogo ? 'جاري الرفع...' : 'رفع لوجو جديد'}</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={isUploadingLogo}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'logo');
+                    }}
+                  />
+                </label>
+              </div>
+
+              <input
+                type="url"
+                dir="ltr"
+                placeholder="أو أدخل رابط اللوجو مباشرة: https://..."
+                value={headerLogoUrl}
+                onChange={(e) => setHeaderLogoUrl(e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-mono text-left bg-white"
+              />
+            </div>
+
+            {/* 2. Hero Banner */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-stone-800">
+                  صورة البانر الرئيسي (Hero Banner)
+                </label>
+                {heroBannerUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setHeroBannerUrl('')}
+                    className="text-[11px] text-rose-600 hover:text-rose-700 flex items-center gap-1 font-semibold"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>إزالة واستعادة الافتراضي</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden border border-stone-300 bg-stone-100 shadow-xs my-2">
+                <Image
+                  src={heroBannerUrl || "https://images.unsplash.com/photo-1594913785162-e678a0c23ee9?auto=format&fit=crop&w=800&q=80"}
+                  alt="Hero Banner Preview"
+                  fill
+                  className="object-cover"
+                />
+                {!heroBannerUrl && (
+                  <div className="absolute inset-0 bg-stone-950/30 flex items-center justify-center">
+                    <span className="text-[11px] font-bold text-white bg-stone-900/80 px-2 py-1 rounded-md">
+                      الصورة الافتراضية
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-stone-200 hover:border-stone-400 text-xs font-bold text-stone-800 transition-colors shadow-xs">
+                  <Upload className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{isUploadingBanner ? 'جاري الرفع...' : 'رفع بانر جديد'}</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={isUploadingBanner}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'banner');
+                    }}
+                  />
+                </label>
+              </div>
+
+              <input
+                type="url"
+                dir="ltr"
+                placeholder="أو أدخل رابط البانر مباشرة: https://..."
+                value={heroBannerUrl}
+                onChange={(e) => setHeroBannerUrl(e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-mono text-left bg-white"
+              />
+            </div>
           </div>
         </div>
 
