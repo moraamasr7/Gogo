@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'react-hot-toast';
+import { RealtimeOrderNotification } from './RealtimeNotification';
 
 export default function AdminLayout({
   children,
@@ -165,11 +166,20 @@ export default function AdminLayout({
           </div>
         )}
 
+        {/* Top bar with Realtime Status & Quick Actions */}
+        <header className="bg-white/80 backdrop-blur border-b border-stone-200/80 px-6 py-3.5 hidden md:flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-2 text-xs text-stone-500">
+            <span>مرحباً بك في إدارة</span>
+            <span className="font-bold text-stone-900">Gogo Concrete</span>
+          </div>
+
+          <RealtimeOrderNotification />
+        </header>
+
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
-
       </div>
 
     </div>
