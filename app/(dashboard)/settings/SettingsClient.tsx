@@ -45,9 +45,41 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
   const [promoBannerLink, setPromoBannerLink] = useState(initialMap['promo_banner_link'] || '/products');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isTogglingMaintenance, setIsTogglingMaintenance] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isUploadingPromo, setIsUploadingPromo] = useState(false);
+
+  const handleToggleMaintenance = async () => {
+    if (isTogglingMaintenance) return;
+    const nextState = !maintenanceMode;
+    setMaintenanceMode(nextState);
+    setIsTogglingMaintenance(true);
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert(
+          {
+            key: 'maintenance_mode',
+            value: nextState ? 'true' : 'false',
+            is_public: true,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'key' }
+        );
+      if (error) throw error;
+      if (nextState) {
+        toast.success('تم تفعيل وضع الصيانة ⚠️ (المتجر مغلق ومحمي أمام العملاء)');
+      } else {
+        toast.success('تم إلغاء وضع الصيانة بنجاح! 🟢 (المتجر مفتوح ومتاح للعملاء الآن)');
+      }
+    } catch (err: any) {
+      setMaintenanceMode(!nextState); // rollback
+      toast.error('فشل تحديث وضع الصيانة: ' + (err.message || 'حدث خطأ'));
+    } finally {
+      setIsTogglingMaintenance(false);
+    }
+  };
 
   const handleFileUpload = async (file: File, type: 'logo' | 'banner' | 'promo') => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -528,21 +560,34 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
           </div>
 
           {/* Maintenance Mode Toggle */}
-          <div className="pt-3 border-t border-stone-100 flex items-center justify-between p-4 rounded-2xl bg-stone-50 border border-stone-200">
-            <div>
+          <div className="pt-3 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-stone-50 border border-stone-200">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Hammer className="w-4 h-4 text-stone-600" />
                 <span className="font-bold text-xs text-stone-900">وضع الصيانة المؤقت</span>
+                {maintenanceMode ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                    <span>المتجر مغلق ومحمي</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>المتجر مفتوح ومتاح للزوار</span>
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5">
-                عند التفعيل، سيرى زوار المتجر شاشة صيانة هادئة، بينما تظل لوحة الإدارة تعمل بالكامل.
+              <p className="text-[11px] text-stone-500">
+                الضغط على الزر يقوم بالتفعيل أو الإلغاء الفوري، وسينعكس فوراً على زوار المتجر وسلة المشتريات.
               </p>
             </div>
 
             <button
               type="button"
-              onClick={() => setMaintenanceMode(!maintenanceMode)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              disabled={isTogglingMaintenance}
+              onClick={handleToggleMaintenance}
+              aria-label="تبديل وضع الصيانة"
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
                 maintenanceMode ? 'bg-amber-600' : 'bg-stone-300'
               }`}
             >
