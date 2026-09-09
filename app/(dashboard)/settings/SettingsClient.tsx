@@ -34,12 +34,22 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
 
   const [headerLogoUrl, setHeaderLogoUrl] = useState(initialMap['header_logo_url'] || '');
   const [heroBannerUrl, setHeroBannerUrl] = useState(initialMap['hero_banner_url'] || '');
+  const [promoBannerActive, setPromoBannerActive] = useState(initialMap['promo_banner_active'] !== 'false');
+  const [promoBannerTitle, setPromoBannerTitle] = useState(
+    initialMap['promo_banner_title'] || 'عرض الموسم ✨ خصم خاص لفترة محدودة على تشكيلة الصواني والمباخر'
+  );
+  const [promoBannerBadge, setPromoBannerBadge] = useState(initialMap['promo_banner_badge'] || 'عرض خاص 🔥');
+  const [promoBannerImageUrl, setPromoBannerImageUrl] = useState(
+    initialMap['promo_banner_image_url'] || 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=1200&q=80'
+  );
+  const [promoBannerLink, setPromoBannerLink] = useState(initialMap['promo_banner_link'] || '/products');
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isUploadingPromo, setIsUploadingPromo] = useState(false);
 
-  const handleFileUpload = async (file: File, type: 'logo' | 'banner') => {
+  const handleFileUpload = async (file: File, type: 'logo' | 'banner' | 'promo') => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       toast.error('صيغة الصورة يجب أن تكون JPG أو PNG أو WEBP');
       return;
@@ -51,7 +61,8 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
     }
 
     if (type === 'logo') setIsUploadingLogo(true);
-    else setIsUploadingBanner(true);
+    else if (type === 'banner') setIsUploadingBanner(true);
+    else setIsUploadingPromo(true);
 
     try {
       const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
@@ -69,15 +80,20 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
 
       if (type === 'logo') {
         setHeaderLogoUrl(publicUrlData.publicUrl);
-      } else {
+        toast.success('تم رفع لوجو الهيدر بنجاح! ✨');
+      } else if (type === 'banner') {
         setHeroBannerUrl(publicUrlData.publicUrl);
+        toast.success('تم رفع بانر المتجر بنجاح! ✨');
+      } else {
+        setPromoBannerImageUrl(publicUrlData.publicUrl);
+        toast.success('تم رفع صورة البنر الترويجي بنجاح! ✨');
       }
-      toast.success(type === 'logo' ? 'تم رفع لوجو الهيدر بنجاح! ✨' : 'تم رفع بانر المتجر بنجاح! ✨');
     } catch (err: any) {
       toast.error(err.message || 'فشل رفع الصورة');
     } finally {
       if (type === 'logo') setIsUploadingLogo(false);
-      else setIsUploadingBanner(false);
+      else if (type === 'banner') setIsUploadingBanner(false);
+      else setIsUploadingPromo(false);
     }
   };
 
@@ -97,6 +113,11 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
       { key: 'maintenance_mode', value: maintenanceMode ? 'true' : 'false' },
       { key: 'header_logo_url', value: headerLogoUrl.trim() },
       { key: 'hero_banner_url', value: heroBannerUrl.trim() },
+      { key: 'promo_banner_active', value: promoBannerActive ? 'true' : 'false' },
+      { key: 'promo_banner_title', value: promoBannerTitle.trim() },
+      { key: 'promo_banner_badge', value: promoBannerBadge.trim() },
+      { key: 'promo_banner_image_url', value: promoBannerImageUrl.trim() },
+      { key: 'promo_banner_link', value: promoBannerLink.trim() },
     ];
 
     try {
@@ -367,6 +388,108 @@ export default function SettingsClient({ initialSettings }: SettingsClientProps)
                 onChange={(e) => setHeroBannerUrl(e.target.value)}
                 className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-mono text-left bg-white"
               />
+            </div>
+
+            {/* 3. Promo Banner */}
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-stone-800 block">
+                    بنر العرض الترويجي (Promo Banner)
+                  </label>
+                  <span className="text-[11px] text-stone-500">
+                    بنر عرض عريض بمقاس متناسق (21:9 أو 16:9) يظهر مباشرة في الصفحة الرئيسية
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-stone-700">
+                    <input
+                      type="checkbox"
+                      checked={promoBannerActive}
+                      onChange={(e) => setPromoBannerActive(e.target.checked)}
+                      className="rounded text-brass-600 focus:ring-brass-500 w-4 h-4"
+                    />
+                    <span>تفعيل ظهور البنر</span>
+                  </label>
+                  {promoBannerImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPromoBannerImageUrl('')}
+                      className="text-[11px] text-rose-600 hover:text-rose-700 flex items-center gap-1 font-semibold"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>حذف الصورة</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {promoBannerImageUrl && (
+                <div className="relative w-full aspect-[21/9] sm:aspect-[24/8] rounded-2xl overflow-hidden border border-stone-300 bg-stone-100 shadow-xs my-2">
+                  <Image
+                    src={promoBannerImageUrl}
+                    alt="Promo Banner Preview"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent flex flex-col justify-end p-4 text-white">
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-brass-500 text-stone-950 text-[10px] font-bold self-start mb-1">
+                      {promoBannerBadge}
+                    </span>
+                    <p className="text-xs sm:text-sm font-black">{promoBannerTitle}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">عنوان العرض</label>
+                  <input
+                    type="text"
+                    value={promoBannerTitle}
+                    onChange={(e) => setPromoBannerTitle(e.target.value)}
+                    placeholder="عنوان العرض الترويجي..."
+                    className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">شارة البنر</label>
+                  <input
+                    type="text"
+                    value={promoBannerBadge}
+                    onChange={(e) => setPromoBannerBadge(e.target.value)}
+                    placeholder="عرض خاص 🔥"
+                    className="w-full px-3 py-1.5 rounded-lg border border-stone-200 text-xs bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:border-stone-400 text-xs font-bold text-stone-800 transition-colors shadow-xs">
+                  <Upload className="w-3.5 h-3.5 text-stone-600" />
+                  <span>{isUploadingPromo ? 'جاري الرفع...' : 'رفع صورة للبنر الترويجي'}</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={isUploadingPromo}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'promo');
+                    }}
+                  />
+                </label>
+
+                <input
+                  type="url"
+                  dir="ltr"
+                  placeholder="أو رابط الصورة مباشرة: https://..."
+                  value={promoBannerImageUrl}
+                  onChange={(e) => setPromoBannerImageUrl(e.target.value)}
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 text-[11px] font-mono text-left bg-white"
+                />
+              </div>
             </div>
           </div>
         </div>
